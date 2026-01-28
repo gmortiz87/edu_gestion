@@ -51,6 +51,8 @@ INSTALLED_APPS = [
 
     # Third-party
     'rest_framework',
+    'django_filters',
+    'drf_spectacular',
 
     # Apps del dominio (ajústalas cuando las crees)
     'core',           # usuarios, catálogos, auditoría
@@ -166,4 +168,21 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.SessionAuthentication",
         "rest_framework.authentication.BasicAuthentication",
     ],
+    # Filtrado
+    "DEFAULT_FILTER_BACKENDS": [
+        "django_filters.rest_framework.DjangoFilterBackend",
+        "rest_framework.filters.SearchFilter",
+        "rest_framework.filters.OrderingFilter",
+    ],
+    # Documentación API
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+# drf-spectacular settings
+SPECTACULAR_SETTINGS = {
+    "TITLE": "EDU_GESTION API",
+    "DESCRIPTION": "API REST para gestión de proyectos educativos - Secretaría de Educación",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "SCHEMA_PATH_PREFIX": "/api/",
 }

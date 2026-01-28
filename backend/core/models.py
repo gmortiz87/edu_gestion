@@ -4,7 +4,7 @@ from django.db import models
 class Vigencia(models.Model):
     id_vigencia = models.IntegerField(primary_key=True)
     anio = models.IntegerField(unique=True)
-    estado = models.CharField(max_length=10)  # ACTIVA | CERRADA
+    estado = models.CharField(max_length=10, default='ACTIVA')  # ACTIVA | CERRADA
 
     class Meta:
         managed = False
@@ -30,25 +30,43 @@ class LineaEstrategica(models.Model):
 
 class LineaVigencia(models.Model):
     id_linea_vigencia = models.BigAutoField(primary_key=True)
-    id_linea = models.BigIntegerField()
-    id_vigencia = models.IntegerField()
-    estado = models.CharField(max_length=10)  # ACTIVA | INACTIVA
+    linea = models.ForeignKey(
+        LineaEstrategica, 
+        on_delete=models.DO_NOTHING, 
+        db_column="id_linea",
+        related_name="vigencias"
+    )
+    vigencia = models.ForeignKey(
+        Vigencia, 
+        on_delete=models.DO_NOTHING, 
+        db_column="id_vigencia",
+        related_name="lineas"
+    )
+    estado = models.CharField(max_length=10, default='ACTIVA')  # ACTIVA | INACTIVA
 
     class Meta:
         managed = False
         db_table = "linea_vigencia"
+        unique_together = (("linea", "vigencia"),)
 
     def __str__(self):
-        return f"LV({self.id_linea}/{self.id_vigencia}) {self.estado}"
+        return f"LV({self.linea}/{self.vigencia}) {self.estado}"
 
 
 class Usuario(models.Model):
+    ROLES = [
+        ('ADMIN', 'ADMIN'),
+        ('RESPONSABLE_PROYECTO', 'RESPONSABLE_PROYECTO'),
+        ('APOYO_TECNICO', 'APOYO_TECNICO'),
+        ('EDITOR', 'EDITOR'),
+        ('LECTOR', 'LECTOR'),
+    ]
     id_usuario = models.BigAutoField(primary_key=True)
     nombre = models.CharField(max_length=200)
-    correo = models.CharField(max_length=200)
-    rol = models.CharField(max_length=30)  # ADMIN | RESPONSABLE_PROYECTO | APOYO_TECNICO | EDITOR | LECTOR
-    activo = models.BooleanField()
-    creado_en = models.DateTimeField()
+    correo = models.CharField(max_length=200, unique=True)
+    rol = models.CharField(max_length=30, choices=ROLES)
+    activo = models.BooleanField(default=True)
+    creado_en = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         managed = False
@@ -72,9 +90,14 @@ class Municipio(models.Model):
 
 class InstitucionEducativa(models.Model):
     id_ie = models.BigAutoField(primary_key=True)
-    codigo_dane = models.CharField(max_length=30)
+    codigo_dane = models.CharField(max_length=30, unique=True)
     nombre = models.CharField(max_length=250)
-    id_municipio = models.IntegerField()
+    municipio = models.ForeignKey(
+        Municipio, 
+        on_delete=models.DO_NOTHING, 
+        db_column="id_municipio",
+        related_name="instituciones"
+    )
 
     class Meta:
         managed = False

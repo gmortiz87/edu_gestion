@@ -161,12 +161,13 @@ CREATE TABLE proyecto (
 ) ENGINE=InnoDB;
 
 CREATE TABLE proyecto_meta (
+  id_proyecto_meta BIGINT AUTO_INCREMENT PRIMARY KEY,
   id_proyecto BIGINT NOT NULL,
   id_meta BIGINT NOT NULL,
   valor_planeado DECIMAL(18,2) NULL,
   valor_logrado DECIMAL(18,2) NULL,
   observacion VARCHAR(600) NULL,
-  PRIMARY KEY (id_proyecto, id_meta),
+  UNIQUE KEY uq_proyecto_meta (id_proyecto, id_meta),
   CONSTRAINT fk_pm_proy FOREIGN KEY (id_proyecto) REFERENCES proyecto(id_proyecto) ON DELETE CASCADE,
   CONSTRAINT fk_pm_meta FOREIGN KEY (id_meta) REFERENCES meta(id_meta),
   KEY ix_pm_meta (id_meta)
@@ -439,84 +440,3 @@ FROM proyecto p
 LEFT JOIN actividad a ON a.id_proyecto = p.id_proyecto
 LEFT JOIN beneficio_actividad_ie bai ON bai.id_actividad = a.id_actividad
 GROUP BY p.id_proyecto, p.codigo, p.nombre;
-
-
-
-SELECT
-  le.codigo AS linea_codigo,
-  v.anio AS vigencia,
-
-  p.codigo AS proyecto_codigo,
-  p.nombre AS proyecto_nombre,
-  p.codigo_bpin,
-  p.codigo_pi,
-
-  ur.nombre AS responsable,
-  ua.nombre AS apoyo_tecnico,
-
-  pf.presupuesto_total,
-  pf.total_ejecutado_calculado,
-  pf.porcentaje_ejecucion,
-
-  a.id_actividad,
-  a.nombre AS actividad_nombre,
-  a.estado AS actividad_estado,
-  a.componente_pam,
-  a.actor_dirigido,
-  a.total_ejecutado AS actividad_ejecutado,
-
-  av.fecha_corte AS avance_fecha,
-  av.porcentaje AS avance_pct,
-
-  ie.codigo_dane,
-  ie.nombre AS institucion_educativa,
-  mu.nombre AS municipio,
-
-  bai.fecha_evento,
-  bai.directivos_benef,
-  bai.docentes_benef,
-  bai.estudiantes_benef,
-  bai.recibio_asistencia_tecnica,
-  bai.modalidad_asistencia_tecnica,
-  bai.recibio_dotacion,
-  bai.dotacion_recibida,
-
-  bev.tipo AS beneficio_evid_tipo,
-  bev.url AS beneficio_evid_url,
-  bev.ruta_archivo AS beneficio_evid_archivo,
-
-  ig.codigo AS indicador_codigo,
-  igv.fecha_corte AS indicador_fecha,
-  igv.valor AS indicador_valor
-
-FROM proyecto p
-JOIN linea_vigencia lv ON lv.id_linea_vigencia = p.id_linea_vigencia
-JOIN linea_estrategica le ON le.id_linea = lv.id_linea
-JOIN vigencia v ON v.id_vigencia = lv.id_vigencia
-JOIN usuario ur ON ur.id_usuario = p.responsable_id
-JOIN usuario ua ON ua.id_usuario = p.apoyo_tecnico_id
-
-LEFT JOIN vw_proyecto_finanzas pf ON pf.id_proyecto = p.id_proyecto
-
-LEFT JOIN proyecto_meta pm ON pm.id_proyecto = p.id_proyecto
-LEFT JOIN meta m ON m.id_meta = pm.id_meta
-LEFT JOIN indicador_gestion ig ON ig.id_meta = m.id_meta
-LEFT JOIN indicador_gestion_valor igv
-  ON igv.id_indicador = ig.id_indicador
- AND igv.fecha_corte = (
-    SELECT MAX(x.fecha_corte)
-    FROM indicador_gestion_valor x
-    WHERE x.id_indicador = ig.id_indicador
- )
-
-LEFT JOIN actividad a ON a.id_proyecto = p.id_proyecto
-LEFT JOIN avance_actividad av ON av.id_actividad = a.id_actividad
-LEFT JOIN beneficio_actividad_ie bai ON bai.id_actividad = a.id_actividad
-LEFT JOIN institucion_educativa ie ON ie.id_ie = bai.id_ie
-LEFT JOIN municipio mu ON mu.id_municipio = ie.id_municipio
-LEFT JOIN beneficio_evidencia bev ON bev.id_beneficio = bai.id_beneficio
-
-WHERE le.codigo = 'POAI'
-  AND v.anio = 2025
-
-ORDER BY p.codigo, a.id_actividad, bai.fecha_evento, bev.id_evidencia;
