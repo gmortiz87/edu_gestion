@@ -7,6 +7,7 @@ from .models import (
     Municipio,
     InstitucionEducativa,
     Usuario,
+    EntidadAliada,
 )
 from .serializers import (
     VigenciaSerializer,
@@ -15,6 +16,7 @@ from .serializers import (
     MunicipioSerializer,
     InstitucionEducativaSerializer,
     UsuarioSerializer,
+    EntidadAliadaSerializer,
 )
 from .filters import InstitucionEducativaFilter
 
@@ -70,3 +72,11 @@ class UsuarioViewSet(viewsets.ReadOnlyModelViewSet):
     """
     queryset = Usuario.objects.all().order_by("rol", "nombre")
     serializer_class = UsuarioSerializer
+
+
+class EntidadAliadaViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar entidades aliadas.
+    """
+    queryset = EntidadAliada.objects.all().order_by("nombre")
+    serializer_class = EntidadAliadaSerializer

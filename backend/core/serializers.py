@@ -7,6 +7,7 @@ from .models import (
     Municipio,
     InstitucionEducativa,
     Usuario,
+    EntidadAliada,
 )
 
 
@@ -64,3 +65,10 @@ class UsuarioSerializer(serializers.ModelSerializer):
         model = Usuario
         fields = ["id_usuario", "nombre", "correo", "rol", "activo", "creado_en"]
         read_only_fields = fields
+
+
+class EntidadAliadaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EntidadAliada
+        fields = ["id_entidad", "nombre", "creado_en"]
+        read_only_fields = ["id_entidad", "creado_en"]

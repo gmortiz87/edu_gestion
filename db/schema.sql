@@ -70,6 +70,12 @@ CREATE TABLE institucion_educativa (
   KEY ix_ie_dane (codigo_dane)
 ) ENGINE=InnoDB;
 
+CREATE TABLE entidad_aliada (
+  id_entidad BIGINT AUTO_INCREMENT PRIMARY KEY,
+  nombre VARCHAR(250) NOT NULL UNIQUE,
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
 -- =========================
 -- 3) METAS E INDICADORES
 -- =========================
@@ -145,17 +151,19 @@ CREATE TABLE proyecto (
   estado ENUM('PLANEADO','EN_EJECUCION','FINALIZADO','SUSPENDIDO') NOT NULL DEFAULT 'PLANEADO',
   fecha_inicio DATE NULL,
   fecha_fin DATE NULL,
-
+  id_entidad_aliada BIGINT NULL,
   creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
   CONSTRAINT fk_proy_lv FOREIGN KEY (id_linea_vigencia) REFERENCES linea_vigencia(id_linea_vigencia),
   CONSTRAINT fk_proy_resp FOREIGN KEY (responsable_id) REFERENCES usuario(id_usuario),
   CONSTRAINT fk_proy_apoyo FOREIGN KEY (apoyo_tecnico_id) REFERENCES usuario(id_usuario),
+  CONSTRAINT fk_proy_entidad FOREIGN KEY (id_entidad_aliada) REFERENCES entidad_aliada(id_entidad),
   CONSTRAINT ck_avance_cargue CHECK (avance_cargue_pct IS NULL OR (avance_cargue_pct BETWEEN 0 AND 100)),
 
   KEY ix_proy_lv (id_linea_vigencia),
   KEY ix_proy_resp (responsable_id),
   KEY ix_proy_apoyo (apoyo_tecnico_id),
+  KEY ix_proy_entidad (id_entidad_aliada),
   KEY ix_proy_bpin (codigo_bpin),
   KEY ix_proy_pi (codigo_pi)
 ) ENGINE=InnoDB;

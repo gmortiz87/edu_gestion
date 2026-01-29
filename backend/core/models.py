@@ -53,7 +53,37 @@ class LineaVigencia(models.Model):
         return f"LV({self.linea}/{self.vigencia}) {self.estado}"
 
 
-class Usuario(models.Model):
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+
+class UsuarioManager(BaseUserManager):
+    def create_user(self, correo, password=None, **extra_fields):
+        if not correo:
+            raise ValueError("El correo es obligatorio")
+        correo = self.normalize_email(correo)
+        user = self.model(correo=correo, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, correo, password=None, **extra_fields):
+        extra_fields.setdefault("rol", "ADMIN")
+        return self.create_user(correo, password, **extra_fields)
+
+
+class EntidadAliada(models.Model):
+    id_entidad = models.BigAutoField(primary_key=True)
+    nombre = models.CharField(max_length=250, unique=True)
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        managed = False
+        db_table = "entidad_aliada"
+
+    def __str__(self):
+        return self.nombre
+
+
+class Usuario(AbstractBaseUser):
     ROLES = [
         ('ADMIN', 'ADMIN'),
         ('RESPONSABLE_PROYECTO', 'RESPONSABLE_PROYECTO'),
@@ -64,9 +94,16 @@ class Usuario(models.Model):
     id_usuario = models.BigAutoField(primary_key=True)
     nombre = models.CharField(max_length=200)
     correo = models.CharField(max_length=200, unique=True)
+    password = models.CharField(max_length=255)  # Campo para hash de Django
+    last_login = models.DateTimeField(null=True, blank=True)
     rol = models.CharField(max_length=30, choices=ROLES)
     activo = models.BooleanField(default=True)
     creado_en = models.DateTimeField(auto_now_add=True)
+
+    objects = UsuarioManager()
+
+    USERNAME_FIELD = "correo"
+    REQUIRED_FIELDS = ["nombre", "rol"]
 
     class Meta:
         managed = False
@@ -74,6 +111,24 @@ class Usuario(models.Model):
 
     def __str__(self):
         return f"{self.nombre} ({self.rol})"
+
+    @property
+    def is_staff(self):
+        return self.rol == 'ADMIN'
+
+    @property
+    def is_superuser(self):
+        return self.rol == 'ADMIN'
+
+    def has_perm(self, perm, obj=None):
+        return self.rol == 'ADMIN'
+
+    def has_module_perms(self, app_label):
+        return self.rol == 'ADMIN'
+
+    @property
+    def is_active(self):
+        return self.activo
 
 
 class Municipio(models.Model):

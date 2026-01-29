@@ -7,6 +7,10 @@ from drf_spectacular.views import (
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
 
 from proyectos.views import ProyectoViewSet, ActividadViewSet, AvanceActividadViewSet, ProyectoMetaViewSet
 from beneficiarios.views import BeneficioActividadIEViewSet
@@ -19,6 +23,7 @@ from core.views import (
     MunicipioViewSet,
     InstitucionEducativaViewSet,
     UsuarioViewSet,
+    EntidadAliadaViewSet,
 )
 
 router = DefaultRouter()
@@ -36,10 +41,16 @@ router.register(r"lineas-vigencias", LineaVigenciaViewSet, basename="linea-vigen
 router.register(r"municipios", MunicipioViewSet, basename="municipio")
 router.register(r"instituciones-educativas", InstitucionEducativaViewSet, basename="institucion-educativa")
 router.register(r"usuarios", UsuarioViewSet, basename="usuario")
+router.register(r"entidades-aliadas", EntidadAliadaViewSet, basename="entidad-aliada")
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    # Autenticación
+    path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+
     path("api/", include(router.urls)),
+
     # Documentación API
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),

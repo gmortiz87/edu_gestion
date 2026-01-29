@@ -43,6 +43,14 @@ class Proyecto(models.Model):
     estado = models.CharField(max_length=20, choices=ESTADOS_PROYECTO, default='PLANEADO')
     fecha_inicio = models.DateField(null=True, blank=True)
     fecha_fin = models.DateField(null=True, blank=True)
+    entidad_aliada = models.ForeignKey(
+        "core.EntidadAliada",
+        on_delete=models.DO_NOTHING,
+        db_column="id_entidad_aliada",
+        related_name="proyectos",
+        null=True,
+        blank=True
+    )
     creado_en = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -55,9 +63,10 @@ class Proyecto(models.Model):
 
 class Actividad(models.Model):
     ESTADOS_ACTIVIDAD = [
-        ("PENDIENTE", "PENDIENTE"),
+        ("PLANEADO", "PLANEADO"),
         ("EN_EJECUCION", "EN_EJECUCION"),
-        ("FINALIZADA", "FINALIZADA"),
+        ("FINALIZADO", "FINALIZADO"),
+        ("SUSPENDIDO", "SUSPENDIDO"),
     ]
 
     id_actividad = models.BigAutoField(primary_key=True)
@@ -72,7 +81,7 @@ class Actividad(models.Model):
     nombre = models.CharField(max_length=250)
     descripcion = models.TextField(null=True, blank=True)
 
-    estado = models.CharField(max_length=20, choices=ESTADOS_ACTIVIDAD, default='PENDIENTE')
+    estado = models.CharField(max_length=20, choices=ESTADOS_ACTIVIDAD, default='PLANEADO')
     fecha_inicio = models.DateField(null=True, blank=True)
     fecha_fin = models.DateField(null=True, blank=True)
 
