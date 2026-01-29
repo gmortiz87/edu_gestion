@@ -37,9 +37,10 @@ interface ActivityModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSuccess: () => void;
+    initialData?: any; // Data to pre-fill for editing
 }
 
-export default function ActivityModal({ proyectoId, isOpen, onClose, onSuccess }: ActivityModalProps) {
+export default function ActivityModal({ proyectoId, isOpen, onClose, onSuccess, initialData }: ActivityModalProps) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -51,7 +52,11 @@ export default function ActivityModal({ proyectoId, isOpen, onClose, onSuccess }
         formState: { errors },
     } = useForm<ActivityFormValues>({
         resolver: zodResolver(activitySchema),
-        defaultValues: {
+        values: initialData ? {
+            ...initialData,
+            // Ensure numbers are strings for the input type="number" if necessary, 
+            // but Zod handles union. Here we just spread.
+        } : {
             estado: "PLANEADO",
             entrega_dotacion: false,
             numero_beneficiarios: 0,
@@ -71,7 +76,13 @@ export default function ActivityModal({ proyectoId, isOpen, onClose, onSuccess }
                 proyecto: proyectoId,
                 numero_beneficiarios: data.numero_beneficiarios === "" || data.numero_beneficiarios === undefined || data.numero_beneficiarios === null ? 0 : Number(data.numero_beneficiarios),
             };
-            await api.post("/actividades/", payload);
+
+            if (initialData?.id_actividad) {
+                await api.patch(`/actividades/${initialData.id_actividad}/`, payload);
+            } else {
+                await api.post("/actividades/", payload);
+            }
+
             reset();
             onSuccess();
             onClose();
@@ -110,7 +121,9 @@ export default function ActivityModal({ proyectoId, isOpen, onClose, onSuccess }
                 {/* Header */}
                 <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
                     <div>
-                        <h3 className="text-lg font-bold text-slate-800">Nueva Actividad</h3>
+                        <h3 className="text-lg font-bold text-slate-800">
+                            {initialData ? "Editar Actividad" : "Nueva Actividad"}
+                        </h3>
                         <p className="text-xs text-slate-500 uppercase tracking-widest font-semibold mt-1">Desglose de Proyecto</p>
                     </div>
                     <button
@@ -276,7 +289,7 @@ export default function ActivityModal({ proyectoId, isOpen, onClose, onSuccess }
                             className="flex items-center gap-2 px-8 py-2.5 bg-brand-blue text-white font-bold rounded-xl hover:bg-brand-blue-dark transition-all shadow-lg shadow-brand-blue/20 disabled:opacity-50 disabled:shadow-none"
                         >
                             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                            Crear Actividad
+                            {initialData ? "Guardar Cambios" : "Crear Actividad"}
                         </button>
                     </div>
                 </form>

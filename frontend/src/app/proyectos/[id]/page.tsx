@@ -16,6 +16,8 @@ import {
     Calendar as CalendarIcon,
     ChevronRight,
     FolderKanban,
+    Pencil,
+    Trash2,
     type LucideIcon
 } from "lucide-react";
 import ActivityModal from "@/components/ActivityModal";
@@ -73,6 +75,7 @@ export default function ProjectDetailPage() {
     const [proyecto, setProyecto] = useState<ProyectoDetail | null>(null);
     const [loading, setLoading] = useState(true);
     const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
+    const [activityToEdit, setActivityToEdit] = useState<Actividad | null>(null);
 
     const fetchDetail = useCallback(async () => {
         try {
@@ -88,6 +91,27 @@ export default function ProjectDetailPage() {
     useEffect(() => {
         fetchDetail();
     }, [id, fetchDetail]);
+
+    const handleDeleteActivity = async (activityId: number) => {
+        if (!confirm("¿Está seguro de eliminar esta actividad? Esta acción no se puede deshacer.")) return;
+        try {
+            await api.delete(`/actividades/${activityId}/`);
+            fetchDetail();
+        } catch (err) {
+            console.error("Error deleting activity", err);
+            alert("No se pudo eliminar la actividad");
+        }
+    };
+
+    const handleEditActivity = (activity: Actividad) => {
+        setActivityToEdit(activity);
+        setIsActivityModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsActivityModalOpen(false);
+        setActivityToEdit(null);
+    };
 
     if (loading) return <div className="p-8 text-center text-slate-500 italic">Cargando detalles del proyecto...</div>;
     if (!proyecto) return <div className="p-8 text-center text-red-500">Proyecto no encontrado.</div>;
@@ -196,7 +220,10 @@ export default function ProjectDetailPage() {
                                 Actividades y Tareas
                             </h4>
                             <button
-                                onClick={() => setIsActivityModalOpen(true)}
+                                onClick={() => {
+                                    setActivityToEdit(null);
+                                    setIsActivityModalOpen(true);
+                                }}
                                 className="flex items-center gap-2 px-4 py-2 bg-slate-50 text-brand-blue border border-brand-blue/20 rounded-lg text-xs font-bold hover:bg-brand-blue hover:text-white transition-all"
                             >
                                 <Plus className="w-4 h-4" />
@@ -227,6 +254,22 @@ export default function ProjectDetailPage() {
                                                 <div className="text-right">
                                                     <p className="text-[10px] font-bold text-slate-400 uppercase">Avance</p>
                                                     <p className="text-sm font-black text-brand-blue">{act.total_ejecutado || 0}%</p>
+                                                </div>
+                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button
+                                                        onClick={() => handleEditActivity(act)}
+                                                        className="p-1.5 hover:bg-white border border-transparent hover:border-slate-200 rounded-lg text-slate-400 hover:text-brand-blue transition-all"
+                                                        title="Editar Actividad"
+                                                    >
+                                                        <Pencil className="w-3.5 h-3.5" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteActivity(act.id_actividad)}
+                                                        className="p-1.5 hover:bg-white border border-transparent hover:border-slate-200 rounded-lg text-slate-400 hover:text-red-500 transition-all"
+                                                        title="Eliminar Actividad"
+                                                    >
+                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                    </button>
                                                 </div>
                                                 <button className="p-2 hover:bg-white border border-transparent hover:border-slate-200 rounded-lg text-slate-400 hover:text-brand-blue transition-all" title="Gestionar Avance">
                                                     <ChevronRight className="w-4 h-4" />
@@ -287,7 +330,8 @@ export default function ProjectDetailPage() {
             <ActivityModal
                 proyectoId={Number(id)}
                 isOpen={isActivityModalOpen}
-                onClose={() => setIsActivityModalOpen(false)}
+                initialData={activityToEdit}
+                onClose={handleCloseModal}
                 onSuccess={fetchDetail}
             />
         </div>
