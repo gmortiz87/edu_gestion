@@ -21,6 +21,8 @@ import {
     type LucideIcon
 } from "lucide-react";
 import ActivityModal from "@/components/ActivityModal";
+import ProgressLogModal from "@/components/ProgressLogModal";
+import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
 
 interface Meta {
     id_meta: number;
@@ -76,6 +78,14 @@ export default function ProjectDetailPage() {
     const [loading, setLoading] = useState(true);
     const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
     const [activityToEdit, setActivityToEdit] = useState<Actividad | null>(null);
+    const [isProgressModalOpen, setIsProgressModalOpen] = useState(false);
+    const [activityForProgress, setActivityForProgress] = useState<Actividad | null>(null);
+    const [deleteModal, setDeleteModal] = useState<{ open: boolean; id: number | null; error: string | null; loading: boolean }>({
+        open: false,
+        id: null,
+        error: null,
+        loading: false
+    });
 
     const fetchDetail = useCallback(async () => {
         try {
@@ -92,14 +102,18 @@ export default function ProjectDetailPage() {
         fetchDetail();
     }, [id, fetchDetail]);
 
-    const handleDeleteActivity = async (activityId: number) => {
-        if (!confirm("¿Está seguro de eliminar esta actividad? Esta acción no se puede deshacer.")) return;
+    const handleDeleteActivity = async () => {
+        if (!deleteModal.id) return;
+
+        setDeleteModal(prev => ({ ...prev, loading: true, error: null }));
         try {
-            await api.delete(`/actividades/${activityId}/`);
+            await api.delete(`/actividades/${deleteModal.id}/`);
+            setDeleteModal({ open: false, id: null, error: null, loading: false });
             fetchDetail();
-        } catch (err) {
-            console.error("Error deleting activity", err);
-            alert("No se pudo eliminar la actividad");
+        } catch (err: any) {
+            console.warn("Error deleting activity", err);
+            const msg = err.response?.data?.detail || "No se pudo eliminar la actividad";
+            setDeleteModal(prev => ({ ...prev, loading: false, error: msg }));
         }
     };
 
@@ -264,14 +278,21 @@ export default function ProjectDetailPage() {
                                                         <Pencil className="w-3.5 h-3.5" />
                                                     </button>
                                                     <button
-                                                        onClick={() => handleDeleteActivity(act.id_actividad)}
+                                                        onClick={() => setDeleteModal({ open: true, id: act.id_actividad, error: null, loading: false })}
                                                         className="p-1.5 hover:bg-white border border-transparent hover:border-slate-200 rounded-lg text-slate-400 hover:text-red-500 transition-all"
                                                         title="Eliminar Actividad"
                                                     >
                                                         <Trash2 className="w-3.5 h-3.5" />
                                                     </button>
                                                 </div>
-                                                <button className="p-2 hover:bg-white border border-transparent hover:border-slate-200 rounded-lg text-slate-400 hover:text-brand-blue transition-all" title="Gestionar Avance">
+                                                <button
+                                                    onClick={() => {
+                                                        setActivityForProgress(act);
+                                                        setIsProgressModalOpen(true);
+                                                    }}
+                                                    className="p-2 hover:bg-white border border-transparent hover:border-slate-200 rounded-lg text-slate-400 hover:text-brand-blue transition-all"
+                                                    title="Gestionar Avance"
+                                                >
                                                     <ChevronRight className="w-4 h-4" />
                                                 </button>
                                             </div>
@@ -333,6 +354,29 @@ export default function ProjectDetailPage() {
                 initialData={activityToEdit}
                 onClose={handleCloseModal}
                 onSuccess={fetchDetail}
+            />
+
+            {activityForProgress && (
+                <ProgressLogModal
+                    activityId={activityForProgress.id_actividad}
+                    activityName={activityForProgress.nombre}
+                    isOpen={isProgressModalOpen}
+                    onClose={() => {
+                        setIsProgressModalOpen(false);
+                        setActivityForProgress(null);
+                    }}
+                    onSuccess={fetchDetail}
+                />
+            )}
+
+            <DeleteConfirmationModal
+                isOpen={deleteModal.open}
+                onClose={() => setDeleteModal({ open: false, id: null, error: null, loading: false })}
+                onConfirm={handleDeleteActivity}
+                loading={deleteModal.loading}
+                errorMessage={deleteModal.error}
+                title="¿Eliminar Actividad?"
+                description="Esta acción eliminará permanentemente la actividad y todos sus registros de avance."
             />
         </div>
     );

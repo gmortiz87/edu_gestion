@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import api from "@/lib/api";
 import Link from "next/link";
 import { Plus, Search, Filter, FileText, Edit, Trash2 } from "lucide-react";
+import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
 
 interface Proyecto {
     id_proyecto: number;
@@ -19,20 +20,42 @@ interface Proyecto {
 export default function ProyectosPage() {
     const [proyectos, setProyectos] = useState<Proyecto[]>([]);
     const [loading, setLoading] = useState(true);
+    const [deleteModal, setDeleteModal] = useState<{ open: boolean; id: number | null; error: string | null; loading: boolean }>({
+        open: false,
+        id: null,
+        error: null,
+        loading: false
+    });
+
+    async function fetchProyectos() {
+        try {
+            const res = await api.get("/proyectos/");
+            setProyectos(res.data.results || res.data);
+        } catch (err) {
+            console.error("Error fetching projects", err);
+        } finally {
+            setLoading(false);
+        }
+    }
 
     useEffect(() => {
-        async function fetchProyectos() {
-            try {
-                const res = await api.get("/proyectos/");
-                setProyectos(res.data.results || res.data);
-            } catch (err) {
-                console.error("Error fetching projects", err);
-            } finally {
-                setLoading(false);
-            }
-        }
         fetchProyectos();
     }, []);
+
+    const handleDeleteProject = async () => {
+        if (!deleteModal.id) return;
+
+        setDeleteModal(prev => ({ ...prev, loading: true, error: null }));
+        try {
+            await api.delete(`/proyectos/${deleteModal.id}/`);
+            setDeleteModal({ open: false, id: null, error: null, loading: false });
+            fetchProyectos();
+        } catch (err: any) {
+            console.warn("Error deleting project", err);
+            const msg = err.response?.data?.detail || "No se pudo eliminar el proyecto";
+            setDeleteModal(prev => ({ ...prev, loading: false, error: msg }));
+        }
+    };
 
     return (
         <div className="space-y-8">
@@ -126,10 +149,14 @@ export default function ProyectosPage() {
                                             <Link href={`/proyectos/${proyecto.id_proyecto}`} className="p-1.5 hover:bg-slate-100 hover:text-brand-blue rounded-lg transition-all" title="Ver Detalles">
                                                 <FileText className="w-4 h-4" />
                                             </Link>
-                                            <button className="p-1.5 hover:bg-slate-100 hover:text-amber-600 rounded-lg transition-all" title="Editar">
+                                            <Link href={`/proyectos/editar/${proyecto.id_proyecto}`} className="p-1.5 hover:bg-slate-100 hover:text-amber-600 rounded-lg transition-all" title="Editar">
                                                 <Edit className="w-4 h-4" />
-                                            </button>
-                                            <button className="p-1.5 hover:bg-slate-100 hover:text-red-600 rounded-lg transition-all" title="Eliminar">
+                                            </Link>
+                                            <button
+                                                onClick={() => setDeleteModal({ open: true, id: proyecto.id_proyecto, error: null, loading: false })}
+                                                className="p-1.5 hover:bg-slate-100 hover:text-red-600 rounded-lg transition-all"
+                                                title="Eliminar"
+                                            >
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
                                         </div>
@@ -140,6 +167,16 @@ export default function ProyectosPage() {
                     </tbody>
                 </table>
             </div>
+
+            <DeleteConfirmationModal
+                isOpen={deleteModal.open}
+                onClose={() => setDeleteModal({ open: false, id: null, error: null, loading: false })}
+                onConfirm={handleDeleteProject}
+                loading={deleteModal.loading}
+                errorMessage={deleteModal.error}
+                title="¿Eliminar Proyecto?"
+                description="Esta acción eliminará permanentemente el proyecto y no se puede deshacer."
+            />
         </div>
     );
 }

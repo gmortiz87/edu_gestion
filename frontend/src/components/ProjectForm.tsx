@@ -11,8 +11,8 @@ import { Save, X, Loader2 } from "lucide-react";
 const projectSchema = z.object({
     codigo: z.string().regex(/^\d{6}$/, "El Código PI debe tener 6 dígitos numéricos"),
     nombre: z.string().min(1, "El nombre es obligatorio"),
-    linea_vigencia: z.number({ required_error: "Debe seleccionar una línea/vigencia" }),
-    responsable: z.number({ required_error: "Debe seleccionar un responsable" }),
+    linea_vigencia: z.number(),
+    responsable: z.number(),
     apoyo_tecnico: z.number().optional().nullable(),
     codigo_bpin: z.string().regex(/^\d{13}$/, "El código BPIN debe tener 13 dígitos numéricos").optional().nullable().or(z.literal("")),
     apropiacion_definitiva: z.union([z.number(), z.string(), z.null()]).optional().nullable(),
@@ -37,7 +37,7 @@ interface EntidadAliada {
     nombre: string;
 }
 
-export default function ProjectForm() {
+export default function ProjectForm({ projectId }: { projectId?: number }) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [lineas, setLineas] = useState<LineaVigencia[]>([]);
@@ -51,6 +51,7 @@ export default function ProjectForm() {
         handleSubmit,
         setValue,
         watch,
+        reset,
         formState: { errors },
     } = useForm<ProjectFormValues>({
         resolver: zodResolver(projectSchema),
@@ -74,12 +75,33 @@ export default function ProjectForm() {
                 setLineas(lineasRes.data.results || lineasRes.data);
                 setUsuarios(usuariosRes.data.results || usuariosRes.data);
                 setEntidades(entidadesRes.data.results || entidadesRes.data);
+
+                // If editing, load project data
+                if (projectId) {
+                    const projectRes = await api.get(`/proyectos/${projectId}/`);
+                    const p = projectRes.data;
+                    reset({
+                        codigo: p.codigo,
+                        nombre: p.nombre,
+                        linea_vigencia: p.linea_vigencia,
+                        responsable: p.responsable,
+                        apoyo_tecnico: p.apoyo_tecnico,
+                        codigo_bpin: p.codigo_bpin,
+                        apropiacion_definitiva: p.apropiacion_definitiva,
+                        adicion: p.adicion,
+                        recursos: p.recursos,
+                        entidad_aliada: p.entidad_aliada,
+                        estado: p.estado,
+                        fecha_inicio: p.fecha_inicio,
+                        fecha_fin: p.fecha_fin,
+                    });
+                }
             } catch (err) {
                 console.error("Error cargando datos para el formulario", err);
             }
         }
         loadData();
-    }, []);
+    }, [projectId, reset]);
 
     const handleCreateEntity = async () => {
         if (!newEntityName.trim()) return;
@@ -108,7 +130,11 @@ export default function ProjectForm() {
             adicion: data.adicion === "" || data.adicion === undefined || data.adicion === null ? null : Number(data.adicion)
         };
         try {
-            await api.post("/proyectos/", payload);
+            if (projectId) {
+                await api.patch(`/proyectos/${projectId}/`, payload);
+            } else {
+                await api.post("/proyectos/", payload);
+            }
             router.push("/proyectos");
             router.refresh();
         } catch (err: unknown) {
@@ -167,7 +193,7 @@ export default function ProjectForm() {
                 <div className="space-y-2">
                     <label className="text-sm font-semibold text-slate-700">Línea Estratégica / Vigencia *</label>
                     <select
-                        onChange={(e) => setValue("linea_vigencia", parseInt(e.target.value))}
+                        {...register("linea_vigencia", { valueAsNumber: true })}
                         className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue outline-none transition-all text-slate-900 bg-white"
                     >
                         <option value="">Seleccione una opción estratégica...</option>
@@ -201,7 +227,7 @@ export default function ProjectForm() {
                 <div className="space-y-2">
                     <label className="text-sm font-semibold text-slate-700">Responsable Principal *</label>
                     <select
-                        onChange={(e) => setValue("responsable", parseInt(e.target.value))}
+                        {...register("responsable", { valueAsNumber: true })}
                         className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue outline-none transition-all text-slate-900 bg-white"
                     >
                         <option value="">Seleccione responsable...</option>
@@ -215,7 +241,9 @@ export default function ProjectForm() {
                 <div className="space-y-2">
                     <label className="text-sm font-semibold text-slate-700">Apoyo Técnico (Opcional)</label>
                     <select
-                        onChange={(e) => setValue("apoyo_tecnico", e.target.value ? parseInt(e.target.value) : null)}
+                        {...register("apoyo_tecnico", {
+                            setValueAs: v => (v === "" ? null : parseInt(v))
+                        })}
                         className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue outline-none transition-all text-slate-900 bg-white"
                     >
                         <option value="">Ninguno / Seleccione...</option>
@@ -383,7 +411,7 @@ export default function ProjectForm() {
                     ) : (
                         <Save className="w-5 h-5" />
                     )}
-                    Registrar Proyecto
+                    {projectId ? "Guardar Cambios" : "Registrar Proyecto"}
                 </button>
             </div>
         </form>
