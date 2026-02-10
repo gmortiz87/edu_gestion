@@ -23,6 +23,7 @@ class AvanceActividadSerializer(serializers.ModelSerializer):
 
 class ActividadSerializer(serializers.ModelSerializer):
     proyecto_codigo = serializers.CharField(source="proyecto.codigo", read_only=True)
+    avances = AvanceActividadSerializer(many=True, read_only=True)
 
     class Meta:
         model = Actividad
@@ -30,9 +31,9 @@ class ActividadSerializer(serializers.ModelSerializer):
             "id_actividad", "proyecto", "proyecto_codigo", "nombre", "descripcion", 
             "estado", "fecha_inicio", "fecha_fin", "total_ejecutado", 
             "componente_pam", "actor_dirigido", "numero_beneficiarios", 
-            "entrega_dotacion", "descripcion_dotacion", "creado_en"
+            "entrega_dotacion", "descripcion_dotacion", "creado_en", "avances"
         ]
-        read_only_fields = ["id_actividad", "creado_en", "proyecto_codigo"]
+        read_only_fields = ["id_actividad", "creado_en", "proyecto_codigo", "avances"]
 
 
 class ProyectoSerializer(serializers.ModelSerializer):

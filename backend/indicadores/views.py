@@ -17,8 +17,6 @@ class IndicadorGestionViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = IndicadorGestionSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["meta", "activo"]
-
-
 class IndicadorGestionValorViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = IndicadorGestionValor.objects.select_related("indicador", "registrado_por").order_by("-id_valor")
     serializer_class = IndicadorGestionValorSerializer

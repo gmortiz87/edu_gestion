@@ -18,12 +18,13 @@ type ProgressFormValues = z.infer<typeof progressSchema>;
 interface ProgressLogModalProps {
     activityId: number;
     activityName: string;
+    avances: any[];
     isOpen: boolean;
     onClose: () => void;
     onSuccess: () => void;
 }
 
-export default function ProgressLogModal({ activityId, activityName, isOpen, onClose, onSuccess }: ProgressLogModalProps) {
+export default function ProgressLogModal({ activityId, activityName, avances, isOpen, onClose, onSuccess }: ProgressLogModalProps) {
     const [loading, setLoading] = useState(false);
 
     const {
@@ -132,6 +133,31 @@ export default function ProgressLogModal({ activityId, activityName, isOpen, onC
                         </button>
                     </div>
                 </form>
+
+                {/* Historial de Avances (Bitácora) */}
+                <div className="bg-slate-50 border-t border-slate-100 p-6">
+                    <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center justify-between">
+                        Historial de Avances (Bitácora)
+                        <span className="bg-white px-2 py-0.5 rounded border border-slate-200 text-brand-blue font-bold">{avances.length} registros</span>
+                    </h4>
+
+                    <div className="space-y-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                        {avances.length === 0 ? (
+                            <p className="text-xs text-slate-400 italic text-center py-4">No hay registros previos para esta actividad.</p>
+                        ) : (
+                            avances.map((av: any) => (
+                                <div key={av.id_avance} className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm space-y-1">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-[10px] font-bold text-brand-blue uppercase tracking-tighter">{av.fecha_corte}</span>
+                                        <span className="text-[10px] font-black bg-brand-blue/10 text-brand-blue px-2 py-0.5 rounded-full">{av.porcentaje}%</span>
+                                    </div>
+                                    <p className="text-xs text-slate-600 leading-snug">{av.descripcion}</p>
+                                    <p className="text-[10px] text-slate-400 italic">Por: {av.registrado_por_nombre}</p>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
             </div>
         </div>
     );

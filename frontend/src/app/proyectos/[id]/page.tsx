@@ -47,6 +47,7 @@ interface Actividad {
     actor_dirigido: string;
     numero_beneficiarios: number;
     total_ejecutado: number;
+    avances?: any[];
 }
 
 interface ProyectoDetail {
@@ -231,7 +232,7 @@ export default function ProjectDetailPage() {
                         <div className="p-6 border-b border-slate-100 flex items-center justify-between">
                             <h4 className="font-bold text-slate-800 flex items-center gap-2">
                                 <FolderKanban className="w-5 h-5 text-brand-blue" />
-                                Actividades y Tareas
+                                Seguimiento de Actividades y Metas de Gestión
                             </h4>
                             <button
                                 onClick={() => {
@@ -290,9 +291,10 @@ export default function ProjectDetailPage() {
                                                         setActivityForProgress(act);
                                                         setIsProgressModalOpen(true);
                                                     }}
-                                                    className="p-2 hover:bg-white border border-transparent hover:border-slate-200 rounded-lg text-slate-400 hover:text-brand-blue transition-all"
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-white border border-slate-200 rounded-lg text-slate-500 hover:text-brand-blue transition-all"
                                                     title="Gestionar Avance"
                                                 >
+                                                    <span className="text-[10px] font-bold uppercase tracking-tight">Reportar Avance</span>
                                                     <ChevronRight className="w-4 h-4" />
                                                 </button>
                                             </div>
@@ -316,7 +318,7 @@ export default function ProjectDetailPage() {
                         <div className="p-6 border-b border-slate-100">
                             <h4 className="font-bold text-slate-800 flex items-center gap-2">
                                 <Target className="w-5 h-5 text-brand-red" />
-                                Impacto y Metas
+                                Metas de Impacto y Cumplimiento del Plan de Desarrollo
                             </h4>
                         </div>
                         <div className="p-6">
@@ -360,6 +362,7 @@ export default function ProjectDetailPage() {
                 <ProgressLogModal
                     activityId={activityForProgress.id_actividad}
                     activityName={activityForProgress.nombre}
+                    avances={activityForProgress.avances || []}
                     isOpen={isProgressModalOpen}
                     onClose={() => {
                         setIsProgressModalOpen(false);
